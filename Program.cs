@@ -1,9 +1,10 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using System.Reflection;
 
-namespace InteractionFramework;
+namespace DiscordNameChanger;
 
 public class Program
 {
@@ -22,7 +23,7 @@ public class Program
         _client.Log += LogAsync;
     }
 
-    public static async Task Main(string[] args)
+    public static async Task Main()
     {
         await new Program().Start();
     }
@@ -30,7 +31,7 @@ public class Program
     public async Task Start()
     {
         await InitializeAsync();
-        await _client.LoginAsync(TokenType.Bot, "NjkwNjg3NDAwNjczODA0MzE5.GrlL3W.V1CoRk-sgZOYwHRUK83rQUXkSzX-HWRWCu12F8");
+        await _client.LoginAsync(TokenType.Bot, new ConfigurationBuilder().AddUserSecrets<Program>().Build()["botKey"]);
         await _client.StartAsync();
         await Task.Delay(Timeout.Infinite);
     }

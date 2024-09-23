@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
@@ -17,12 +18,12 @@ namespace DiscordNameChanger
         private readonly VotesDAO votesDAO = new();
 
         [SlashCommand("suggest", "Suggests a nickname for a user. Changes their name if it has the most votes")]
-        public async Task suggestNickname(IGuildUser target, string nickname)
+        public async Task SuggestNickname(IGuildUser target, string nickname)
         {
             votesDAO.SetVote(Context.User.Id, target.Id, nickname);
             await RespondAsync($"{Context.User.Mention} voted for {target.Mention} to be nicknamed {nickname}");
             Dictionary<string, int> nicknames = votesDAO.GetAllSuggestions(target.Id);
-            await FollowupAsync($"nickname: {target.Nickname}, globalName: {target.DisplayName}, username: {target.Username}");
+            //await FollowupAsync($"nickname: {target.Nickname}, globalName: {target.DisplayName}, username: {target.Username}");
             if (nicknames.Count > 0)
             {
                 string mostVotesNickname = nicknames.MaxBy(kvp => kvp.Value).Key;
@@ -42,7 +43,7 @@ namespace DiscordNameChanger
         }
 
         [SlashCommand("show", "Description")]
-        public async Task getNicknameSuggestions(IUser target)
+        public async Task GetNicknameSuggestions(IUser target)
         {
             Dictionary<string, int> nicknames = votesDAO.GetAllSuggestions(target.Id);
             string result = "";
@@ -66,27 +67,27 @@ namespace DiscordNameChanger
 
             private readonly VotesDAO votesDAO = new();
 
-            private async Task checkUsernamesWhereUserVoted(IGuildUser voter)
+            private async Task CheckUsernamesWhereUserVoted(IGuildUser voter)
             {
-                Dictionary<ulong, string> targets = votesDAO.getAllResultsWhereUserVoted(voter.Id);
+                Dictionary<ulong, string> targets = votesDAO.GetAllResultsWhereUserVoted(voter.Id);
                 foreach (ulong targetId in targets.Keys)
                 {
-                    await checkUser(targetId, targets[targetId]);
+                    await CheckUser(targetId, targets[targetId]);
                 }
             }
 
-            private async Task checkUsernamesWithUsername(string username)
+            private async Task CheckUsernamesWithUsername(string username)
             {
-                Dictionary<ulong, string> targets = votesDAO.getAllResultsWhereUserHasNicknameVoted(username);
+                Dictionary<ulong, string> targets = votesDAO.GetAllResultsWhereUserHasNicknameVoted(username);
                 foreach (ulong targetId in targets.Keys)
                 {
-                    await checkUser(targetId, targets[targetId]);
+                    await CheckUser(targetId, targets[targetId]);
                 }
             }
 
-            private async Task checkUser(ulong targetId, string nickname)
+            private async Task CheckUser(ulong targetId, string nickname)
             {
-                IGuildUser votedUser = Context.Guild.GetUser(targetId);
+                SocketGuildUser votedUser = Context.Guild.GetUser(targetId);
                 if (nickname.Length == 0)
                 {
                     await FollowupAsync($"All votes for {votedUser.Mention} have been removed. Changing name to {votedUser.Username}");
@@ -109,33 +110,33 @@ namespace DiscordNameChanger
             [SlashCommand("ban", "Bans the target user from suggesting nicknames and unvalidates all their votes")]
             public async Task BanUserFromSuggestions(IGuildUser target)
             {
-                votesDAO.setBannedStatus(target.Id, true);
+                votesDAO.SetBannedStatus(target.Id, true);
                 await RespondAsync($"Banned {target.Mention} from suggesting nicknames and invalidated all their votes");
-                await checkUsernamesWhereUserVoted(target);
+                await CheckUsernamesWhereUserVoted(target);
             }
 
             [SlashCommand("unban", "Unbans the target user from suggesting nicknames and validates all their votes")]
             public async Task UnbanUserFromSuggestions(IGuildUser target)
             {
-                votesDAO.setBannedStatus(target.Id, false);
+                votesDAO.SetBannedStatus(target.Id, false);
                 await RespondAsync($"Unbanned {target.Mention} from suggesting nicknames and validated all their votes");
-                await checkUsernamesWhereUserVoted(target);
+                await CheckUsernamesWhereUserVoted(target);
             }
 
             [SlashCommand("invalidate", "Invalidates the suggested nickname")]
             public async Task InvalidateNicknameSuggestion(String nickname)
             {
-                votesDAO.setInvalidateStatus(nickname, true);
+                votesDAO.SetInvalidateStatus(nickname, true);
                 await RespondAsync($"Invalidated nickname {nickname}");
-                await checkUsernamesWithUsername(nickname);
+                await CheckUsernamesWithUsername(nickname);
             }
 
             [SlashCommand("validate", "Validates the suggested nickname")]
             public async Task UninvalidateNicknameSuggestion(String nickname)
             {
-                votesDAO.setInvalidateStatus(nickname, false);
+                votesDAO.SetInvalidateStatus(nickname, false);
                 await RespondAsync($"Validated nickname {nickname}");
-                await checkUsernamesWithUsername(nickname);
+                await CheckUsernamesWithUsername(nickname);
             }
 
         }
