@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using System.Diagnostics.Metrics;
 
 namespace DiscordNameChanger
 {
@@ -156,5 +157,33 @@ namespace DiscordNameChanger
             return result;
         }
 
+        internal Dictionary<ulong, string> getAllResultsWhereUserHasNicknameVoted(string username)
+        {
+            Dictionary<ulong, string> result = [];
+            using (var connection = new SqliteConnection(_source))
+            {
+                connection.Open();
+                SqliteCommand command = connection.CreateCommand();
+                command.CommandText = @"WITH valid_votes AS (
+                                        SELECT target_id, nickname
+                                        FROM votes
+                                        INNER JOIN nicknames on votes.nickname_id = nicknames.nickname_id
+                                        INNER JOIN voters on votes.voter_id = voters.voter_id
+                                        WHERE NOT banned AND NOT invalid
+                                        GROUP BY target_id, nickname
+                                        ORDER BY COUNT(votes.voter_id) ASC
+                                        )
+                                        SELECT votes.target_id, (SELECT nickname FROM valid_votes WHERE valid_votes.target_id = votes.target_id LIMIT 1) AS most_voted_nickname
+                                        FROM votes
+                                        WHERE nickname_id = (SELECT nickname_id FROM nicknames WHERE nickname = $username)";
+                command.Parameters.AddWithValue("$username", username);
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    result.Add((ulong)reader.GetInt64(0), reader.IsDBNull(1) ? "" : reader.GetString(1));
+                }
+            }
+            return result;
+        }
     }
 }
