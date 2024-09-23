@@ -80,14 +80,12 @@ namespace DiscordNameChanger
                 connection.Open();
 
                 SqliteCommand command = connection.CreateCommand();
-                command.CommandText = @"insert or replace into nicknames (nickname) 
-                                        values ($nickname)";
+                command.CommandText = @"INSERT OR IGNORE INTO nicknames (nickname) VALUES ($nickname)";
                 command.Parameters.AddWithValue("$nickname", nickname);
                 command.ExecuteNonQuery();
 
                 command = connection.CreateCommand();
-                command.CommandText = @"insert or replace into voters (voter_id) 
-                                        values ($voter_id)";
+                command.CommandText = @"INSERT OR IGNORE INTO voters (voter_id)  VALUES ($voter_id)";
                 command.Parameters.AddWithValue("$voter_id", voter);
                 command.ExecuteNonQuery();
 
@@ -145,14 +143,14 @@ namespace DiscordNameChanger
                                         GROUP BY target_id, nickname
                                         ORDER BY COUNT(votes.voter_id) ASC
                                         )
-                                        SELECT votes.target_id, (SELECT nickname FROM valid_votes WHERE valid_votes.target_id = votes.target_id LIMIT 1) 
+                                        SELECT votes.target_id, (SELECT nickname FROM valid_votes WHERE valid_votes.target_id = votes.target_id LIMIT 1) AS most_voted_nickname
                                         FROM votes
                                         WHERE voter_id = $voter";
                 command.Parameters.AddWithValue("$voter", voter);
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
                 {
-                    result.Add((ulong)reader.GetInt64(0), reader.GetString(1));
+                    result.Add((ulong)reader.GetInt64(0), reader.IsDBNull(1)? "" : reader.GetString(1));
                 }
             }
             return result;
