@@ -1,5 +1,4 @@
 ﻿using Microsoft.Data.Sqlite;
-using System.Diagnostics.Metrics;
 
 namespace DiscordNameChanger
 {
@@ -14,15 +13,15 @@ namespace DiscordNameChanger
             {
                 connection.Open();
 
-                //SqliteCommand command = connection.CreateCommand();
-                //command.CommandText = command.CommandText = @"DROP TABLE IF EXISTS votes";
-                //command.ExecuteNonQuery();
-                //command = connection.CreateCommand();
-                //command.CommandText = command.CommandText = @"DROP TABLE IF EXISTS voters";
-                //command.ExecuteNonQuery();
-                //command = connection.CreateCommand();
-                //command.CommandText = command.CommandText = @"DROP TABLE IF EXISTS nicknames";
-                //command.ExecuteNonQuery();
+                //SqliteCommand dbCommand = connection.CreateCommand();
+                //dbCommand.CommandText = @"DROP TABLE IF EXISTS votes";
+                //dbCommand.ExecuteNonQuery();
+                //dbCommand = connection.CreateCommand();
+                //dbCommand.CommandText = @"DROP TABLE IF EXISTS voters";
+                //dbCommand.ExecuteNonQuery();
+                //dbCommand = connection.CreateCommand();
+                //dbCommand.CommandText = @"DROP TABLE IF EXISTS nicknames";
+                //dbCommand.ExecuteNonQuery();
 
                 SqliteCommand command = connection.CreateCommand();
                 command.CommandText = @"CREATE TABLE IF NOT EXISTS voters (
@@ -151,7 +150,7 @@ namespace DiscordNameChanger
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
                 {
-                    result.Add((ulong)reader.GetInt64(0), reader.IsDBNull(1)? "" : reader.GetString(1));
+                    result.Add((ulong)reader.GetInt64(0), reader.IsDBNull(1) ? "" : reader.GetString(1));
                 }
             }
             return result;
@@ -173,9 +172,10 @@ namespace DiscordNameChanger
                                         GROUP BY target_id, nickname
                                         ORDER BY COUNT(votes.voter_id) ASC
                                         )
-                                        SELECT votes.target_id, (SELECT nickname FROM valid_votes WHERE valid_votes.target_id = votes.target_id LIMIT 1) AS most_voted_nickname
+                                        SELECT DISTINCT votes.target_id, (SELECT nickname FROM valid_votes WHERE valid_votes.target_id = votes.target_id LIMIT 1) AS most_voted_nickname
                                         FROM votes
-                                        WHERE nickname_id = (SELECT nickname_id FROM nicknames WHERE nickname = $username)";
+                                        INNER JOIN nicknames ON votes.nickname_id = nicknames.nickname_id
+                                        WHERE nickname = $username";
                 command.Parameters.AddWithValue("$username", username);
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
