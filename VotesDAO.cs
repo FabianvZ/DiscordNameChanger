@@ -12,9 +12,9 @@ namespace DiscordNameChanger
             using SqliteConnection connection = new(_source);
             connection.Open();
 
-            DropDatabase(connection, "votes");
-            DropDatabase(connection, "voters");
-            DropDatabase(connection, "nicknames");
+            //DropDatabase(connection, "votes");
+            //DropDatabase(connection, "voters");
+            //DropDatabase(connection, "nicknames");
 
             CreateDatabase(connection, @"CREATE TABLE IF NOT EXISTS voters (
                                             voter_id UNSIGNED BIG INT PRIMARY KEY,
