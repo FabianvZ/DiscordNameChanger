@@ -5,7 +5,7 @@ namespace DiscordNameChanger
     public class VotesDAO
     {
 
-        private readonly string _source = "Data Source=votes.db;Mode=ReadWrite";
+        private readonly string _source = "Data Source=votes.db";
 
         public VotesDAO()
         {

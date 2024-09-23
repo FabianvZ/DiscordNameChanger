@@ -23,11 +23,11 @@ namespace DiscordNameChanger
             votesDAO.SetVote(Context.User.Id, target.Id, nickname);
             await RespondAsync($"{Context.User.Mention} voted for {target.Mention} to be nicknamed {nickname}");
             Dictionary<string, int> nicknames = votesDAO.GetAllSuggestions(target.Id);
-            //await FollowupAsync($"nickname: {target.Nickname}, globalName: {target.DisplayName}, username: {target.Username}");
+            await FollowupAsync($"nickname: {target.Nickname}, globalName: {target.DisplayName}, username: {target.Username}");
             if (nicknames.Count > 0)
             {
                 string mostVotesNickname = nicknames.MaxBy(kvp => kvp.Value).Key;
-                if (!target.Username.Equals(mostVotesNickname))
+                if (target.Nickname == null || !nicknames.ContainsKey(target.Nickname) || nicknames[target.Nickname] < nicknames[mostVotesNickname])
                 {
                     await FollowupAsync($"Most voted username for {target.Mention} is now {nickname}");
                     if (target.Hierarchy <= Context.Guild.CurrentUser.Hierarchy)
