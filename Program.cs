@@ -15,7 +15,7 @@ public class Program
     {
         _client = new(new()
         {
-            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMembers,
+            GatewayIntents = GatewayIntents.GuildMessages | GatewayIntents.GuildMembers | GatewayIntents.Guilds,
             AlwaysDownloadUsers = true,
         }
         );
