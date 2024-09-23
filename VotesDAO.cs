@@ -32,14 +32,14 @@ namespace DiscordNameChanger
                                             FOREIGN KEY (voter_id) REFERENCES voters (voter_id))");
         }
 
-        private void DropDatabase(SqliteConnection connection, String db)
+        private static void DropDatabase(SqliteConnection connection, String db)
         {
             SqliteCommand command = connection.CreateCommand();
             command.CommandText = $"DROP TABLE IF EXISTS {db}";
             command.ExecuteNonQuery();
         }
 
-        public void CreateDatabase(SqliteConnection connection, String db)
+        private static void CreateDatabase(SqliteConnection connection, String db)
         {
             SqliteCommand command = connection.CreateCommand();
             command.CommandText = db;
