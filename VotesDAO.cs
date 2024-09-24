@@ -5,9 +5,9 @@ namespace DiscordNameChanger
     public class VotesDAO
     {
 
-        private readonly string _source = "Data Source=votes.db";
+        private static readonly string _source = "Data Source=votes.db";
 
-        public VotesDAO()
+        public static void CreateDatabase()
         {
             using SqliteConnection connection = new(_source);
             connection.Open();
@@ -46,7 +46,7 @@ namespace DiscordNameChanger
             command.ExecuteNonQuery();
         }
 
-        public Dictionary<string, int> GetAllSuggestions(ulong userID)
+        public static Dictionary<string, int> GetAllSuggestions(ulong userID)
         {
             Dictionary<string, int> result = [];
             using (SqliteConnection connection = new(_source))
@@ -71,7 +71,7 @@ namespace DiscordNameChanger
             }
             return result;
         }
-        public void SetVote(ulong voter, ulong target, string nickname)
+        public static void SetVote(ulong voter, ulong target, string nickname)
         {
             using SqliteConnection connection = new(_source);
             connection.Open();
@@ -95,7 +95,7 @@ namespace DiscordNameChanger
             command.ExecuteNonQuery();
         }
 
-        public void SetBannedStatus(ulong userID, Boolean banned)
+        public static void SetBannedStatus(ulong userID, Boolean banned)
         {
             using SqliteConnection connection = new(_source);
             connection.Open();
@@ -107,7 +107,7 @@ namespace DiscordNameChanger
             command.ExecuteNonQuery();
         }
 
-        public void SetInvalidateStatus(string nickname, Boolean invalidated)
+        public static void SetInvalidateStatus(string nickname, Boolean invalidated)
         {
             using SqliteConnection connection = new(_source);
             connection.Open();
@@ -119,49 +119,31 @@ namespace DiscordNameChanger
             command.ExecuteNonQuery();
         }
 
-        public Dictionary<ulong, string> GetAllResultsWhereUserVoted(ulong voter)
+        public static List<ulong> GetAllTargetsWhereUserVoted(ulong voter)
         {
-            Dictionary<ulong, string> result = [];
+            List<ulong> result = [];
             using SqliteConnection connection = new(_source);
             connection.Open();
             SqliteCommand command = connection.CreateCommand();
-            command.CommandText = @"WITH valid_votes AS (
-                                        SELECT target_id, nickname
-                                        FROM votes
-                                        INNER JOIN nicknames on votes.nickname_id = nicknames.nickname_id
-                                        INNER JOIN voters on votes.voter_id = voters.voter_id
-                                        WHERE NOT banned AND NOT invalid
-                                        GROUP BY target_id, nickname
-                                        ORDER BY COUNT(votes.voter_id) ASC
-                                        )
-                                        SELECT votes.target_id, (SELECT nickname FROM valid_votes WHERE valid_votes.target_id = votes.target_id LIMIT 1) AS most_voted_nickname
+            command.CommandText = @"SELECT votes.target_id
                                         FROM votes
                                         WHERE voter_id = $voter";
             command.Parameters.AddWithValue("$voter", voter);
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                result.Add((ulong)reader.GetInt64(0), reader.IsDBNull(1) ? "" : reader.GetString(1));
+                result.Add((ulong)reader.GetInt64(0));
             }
             return result;
         }
 
-        internal Dictionary<ulong, string> GetAllResultsWhereUserHasNicknameVoted(string username)
+        internal static List<ulong> GetAllResultsWhereUserHasNicknameVoted(string username)
         {
-            Dictionary<ulong, string> result = [];
+            List<ulong> result = [];
             using SqliteConnection connection = new(_source);
             connection.Open();
             SqliteCommand command = connection.CreateCommand();
-            command.CommandText = @"WITH valid_votes AS (
-                                        SELECT target_id, nickname
-                                        FROM votes
-                                        INNER JOIN nicknames on votes.nickname_id = nicknames.nickname_id
-                                        INNER JOIN voters on votes.voter_id = voters.voter_id
-                                        WHERE NOT banned AND NOT invalid
-                                        GROUP BY target_id, nickname
-                                        ORDER BY COUNT(votes.voter_id) ASC
-                                        )
-                                        SELECT DISTINCT votes.target_id, (SELECT nickname FROM valid_votes WHERE valid_votes.target_id = votes.target_id LIMIT 1) AS most_voted_nickname
+            command.CommandText = @"SELECT DISTINCT votes.target_id
                                         FROM votes
                                         INNER JOIN nicknames ON votes.nickname_id = nicknames.nickname_id
                                         WHERE nickname = $username";
@@ -169,7 +151,7 @@ namespace DiscordNameChanger
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                result.Add((ulong)reader.GetInt64(0), reader.IsDBNull(1) ? "" : reader.GetString(1));
+                result.Add((ulong)reader.GetInt64(0));
             }
             return result;
         }

@@ -30,6 +30,7 @@ public class Program
 
     public async Task Start()
     {
+        VotesDAO.CreateDatabase();
         await InitializeAsync();
         await _client.LoginAsync(TokenType.Bot, new ConfigurationBuilder().AddUserSecrets<Program>().Build()["botKey"]);
         await _client.StartAsync();
